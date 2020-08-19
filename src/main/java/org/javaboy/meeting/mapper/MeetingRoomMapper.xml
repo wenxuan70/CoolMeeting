@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaboy.meeting.mapper.MeetingRoomMapper">
+
+    <sql id="baseFields">
+        roomid as roomId, roomnum as roomNum, roomname as roomName, capacity, status, description
+    </sql>
+
+    <select id="getAllMrs" resultType="MeetingRoom">
+        select <include refid="baseFields"/> from meetingroom;
+    </select>
+
+    <select id="getMeetingRoomById" resultType="MeetingRoom">
+        select <include refid="baseFields"/> from meetingroom where roomid = #{roomId};
+    </select>
+
+    <update id="updateMeetingRoom" parameterType="MeetingRoom">
+        update meetingroom
+        <set>
+            <if test="mr.roomName!=null">
+                roomname = #{mr.roomName},
+            </if>
+            <if test="mr.roomNum!=null">
+                roomnum = #{mr.roomNum},
+            </if>
+            <if test="mr.description!=null">
+                description = #{mr.description},
+            </if>
+            <if test="mr.capacity!=null">
+                capacity = #{mr.capacity},
+            </if>
+            <if test="mr.status">
+                status = #{mr.status},
+            </if>
+        </set>
+        where roomid = #{mr.roomId};
+    </update>
+
+    <insert id="addMeetingRoom" parameterType="MeetingRoom">
+        insert into meetingroom(roomname,roomnum,capacity,status,description)
+        value (#{mr.roomName}, #{mr.roomNum}, #{mr.capacity}, #{mr.status}, #{mr.description});
+    </insert>
+
+    <select id="getMrIdsByName" resultType="int">
+        select roomid from meetingroom where roomname like concat('%', #{roomName}, '%');
+    </select>
+</mapper>

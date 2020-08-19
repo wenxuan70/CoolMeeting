@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaboy.meeting.mapper.EmployeeMapper">
+
+    <sql id="baseFields">
+        employeeid,employeename,username,password,phone,email,status,departmentid,role
+    </sql>
+
+    <select id="loadEmployeeByUsername" resultType="Employee">
+        select <include refid="baseFields"/> from employee where username = #{username};
+    </select>
+
+    <insert id="addEmployee" parameterType="Employee">
+        insert into employee(employeename,username,phone,email,status,departmentid,password,role)
+        value (#{employeeName},#{username},#{phone},#{email},#{status},#{departmentId},#{password},#{role});
+    </insert>
+
+    <select id="getEmployeesByStatus" resultType="Employee">
+        select <include refid="baseFields"/> from employee where status = #{status};
+    </select>
+
+    <update id="updateStatus">
+        update employee set status = #{status} where employeeid = #{employeeId}
+    </update>
+
+    <select id="searchEmployees" resultType="Employee">
+        select <include refid="baseFields"/>
+        from employee
+        where status = #{status}
+        <if test="username!=null">
+            and username like concat('%',#{username},'%')
+        </if>
+        <if test="employeeName!=null">
+            and employeename like concat('%',#{employeeName},'%')
+        </if>
+        limit #{start}, #{size};
+    </select>
+
+    <select id="getTotal" resultType="Integer">
+        select count(employeeid) from employee
+        where status = #{status}
+        <if test="username!=null">
+            and username like concat('%',#{username},'%')
+        </if>
+        <if test="employeeName!=null">
+            and employeename like concat('%',#{employeeName},'%')
+        </if>
+    </select>
+
+    <select id="getEmployeesByDepId" resultType="Employee">
+        select <include refid="baseFields"/> from employee where departmentid = #{depId};
+    </select>
+
+    <select id="getEmployeeIdsByName" resultType="int">
+        select employeeid from employee where employeename like concat('%', #{employeeName}, '%');
+    </select>
+
+    <update id="updatePassword">
+        update employee set password = #{password} where username = #{username};
+    </update>
+</mapper>

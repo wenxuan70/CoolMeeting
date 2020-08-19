@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaboy.meeting.mapper.MeetingMapper">
+
+    <sql id="insertFields">
+        meetingname,roomid,reservationistid,numberofparticipants,
+        starttime,endtime,reservationtime,description,status
+    </sql>
+
+    <sql id="baseFields">
+        meetingid as meetingId,meetingname meetingName,roomid roomId,reservationistid reservationistId,numberofparticipants numberOfParticipants,
+        starttime startTime,endtime endTime,reservationtime reservationistTime,description,status
+    </sql>
+
+    <insert id="addMeeting" parameterType="Meeting" useGeneratedKeys="true" keyProperty="meetingId">
+        insert into meeting(<include refid="insertFields"/>)
+        value (#{m.meetingName},#{m.roomId},#{m.reservationistId},
+        #{m.numberOfParticipants},#{m.startTime},#{m.endTime},
+        #{m.reservationistTime},#{m.description},#{m.status});
+    </insert>
+
+    <insert id="addMeetingOfEmployee">
+        insert into meetingparticipants(meetingid,employeeid) value
+        <foreach collection="employeeIds" separator="," item="employeeId">
+            (#{meetingId},#{employeeId})
+        </foreach>
+    </insert>
+
+    <select id="getMeetingsByResId" resultType="Meeting">
+        select m.starttime startTime, m.endtime endTime, m.reservationtime reservationistTime,
+            m.meetingname meetingName, mr.roomname roomName, m.meetingid meetingId
+        from meeting m, meetingroom mr
+        where m.roomid = mr.roomid and m.status != 1 and m.reservationistid = #{resId};
+    </select>
+
+    <select id="getMeetingById" resultType="Meeting">
+        select <include refid="baseFields"/>
+        from meeting where meetingid = #{meetingId};
+    </select>
+
+    <select id="getEmployeesByMeetingId" resultType="Employee">
+        select e.employeename employeeName, e.phone phone, e.email email
+        from employee e, meetingparticipants mp
+        where mp.employeeid = e.employeeid and mp.meetingid = #{meetingId};
+    </select>
+
+    <update id="updateMeetingStatus">
+        update meeting
+        <set>
+            <if test="status!=null">
+                status = #{status},
+            </if>
+            <if test="reason!=null">
+                canceledreason = #{reason}, canceledtime = #{canceledTime},
+            </if>
+        </set>
+        where meetingid = #{meetingId};
+    </update>
+
+    <select id="getMeetingsByEmployeeId" resultType="Meeting">
+        select m.meetingid meetingId, m.meetingname meetingName, m.starttime startTime, mr.roomname roomName,
+        m.endtime endTime, m.reservationtime reservationistTime, m.reservationistid reservationistId, e.employeename reservationistName
+        from meeting m,  meetingparticipants mp, meetingroom mr, employee e
+        where m.meetingid = mp.meetingid and m.status != 1 and mr.roomid = m.roomid and
+        e.employeeid = m.reservationistid and mp.employeeid = #{employeeId};
+    </select>
+
+    <select id="searchMeeting" resultType="Meeting">
+        select m.meetingid meetingId, m.meetingname meetingName, m.starttime startTime, mr.roomname roomName,
+        m.endtime endTime, m.reservationtime reservationistTime, m.reservationistid reservationistId, e.employeename reservationistName
+        from meeting m
+        left join meetingroom mr on mr.roomid = m.roomid
+        left join employee e on e.employeeid = m.reservationistid
+        <where>
+            <if test="resIds != null and resIds.length > 0">
+                m.reservationistid in
+                <foreach collection="resIds" item="resId" open="(" close=")" separator=",">
+                    #{resId}
+                </foreach>
+                and
+            </if>
+            <if test="roomIds != null and roomIds.length > 0">
+                m.roomid in
+                <foreach collection="roomIds" item="roomId" open="(" close=")" separator=",">
+                    #{roomId}
+                </foreach>
+                and
+            </if>
+            <if test="startDate != null">
+                #{startDate} &lt; DATE( m.starttime ) and
+            </if>
+            <if test="endDate != null">
+                DATE( m.starttime ) &lt; #{endDate} and
+            </if>
+            <if test="resStartDate != null">
+                #{resStartDate} &lt; DATE( m.endtime ) and
+            </if>
+            <if test="resEndDate != null">
+                DATE( m.endtime ) &lt; ${resEndDate} and
+            </if>
+            <if test="meetingName != null">
+                m.meetingname LIKE concat( '%', #{meetingName}, '%' )
+            </if>
+        </where>
+        limit #{page}, 10;
+    </select>
+
+    <select id="getSearchMeetingTotal" resultType="int">
+        select count(meetingid)
+        from meeting m
+        <where>
+            <if test="resIds != null and resIds.length > 0">
+                m.reservationistid in
+                <foreach collection="resIds" item="resId" open="(" close=")" separator=",">
+                    #{resId}
+                </foreach>
+                and
+            </if>
+            <if test="roomIds != null and roomIds.length > 0">
+                m.roomid in
+                <foreach collection="roomIds" item="roomId" open="(" close=")" separator=",">
+                    #{roomId}
+                </foreach>
+                and
+            </if>
+            <if test="startDate != null">
+                #{startDate} &lt; DATE( m.starttime ) and
+            </if>
+            <if test="endDate != null">
+                DATE( m.starttime ) &lt; #{endDate} and
+            </if>
+            <if test="resStartDate != null">
+                #{resStartDate} &lt; DATE( m.endtime ) and
+            </if>
+            <if test="resEndDate != null">
+                DATE( m.endtime ) &lt; ${resEndDate} and
+            </if>
+            <if test="meetingName != null">
+                m.meetingname LIKE concat( '%', #{meetingName}, '%' )
+            </if>
+        </where>
+    </select>
+
+    <select id="getNewMeetingByEmployeeIdAndStatus" resultType="Meeting" useCache="false">
+        select m.meetingid meetingId, m.meetingname meetingName, m.starttime startTime, mr.roomname roomName, m.endtime endTime
+        <if test="status == 1">
+            , m.canceledreason canceledReason
+        </if>
+        from meeting m
+        left join meetingroom mr on mr.roomid = m.roomid
+        left join meetingparticipants mp on mp.meetingid = m.meetingid
+        where m.status = #{status} and mp.employeeid = #{id} and m.starttime > CURRENT_TIMESTAMP()
+        order by m.starttime desc
+        <if test="size != null">
+            limit #{size}
+        </if>
+    </select>
+</mapper>

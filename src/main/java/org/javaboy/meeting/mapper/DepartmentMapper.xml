@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.javaboy.meeting.mapper.DepartmentMapper">
+
+    <sql id="baseFields">
+        departmentid,departmentname
+    </sql>
+
+    <select id="getAllDeps" resultType="department">
+        select <include refid="baseFields"/>  from department;
+    </select>
+
+    <select id="getDepartmentById" resultType="department">
+        select <include refid="baseFields"/> from department where departmentid = #{departmentId};
+    </select>
+
+    <delete id="deleteDepartment">
+        delete from department where departmentid = #{departmentId};
+    </delete>
+
+    <insert id="addDepartment">
+        insert into department(departmentname) value(#{departmentName});
+    </insert>
+
+    <select id="getDepartmentByName" resultType="department">
+        select <include refid="baseFields"/> from department where departmentname = #{departmentName};
+    </select>
+
+    <update id="updateDepartment">
+        update department set departmentname = #{departmentName} where departmentid = #{departmentId}
+    </update>
+</mapper>
